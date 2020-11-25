@@ -8,6 +8,7 @@
 
 #import "GKNavigationBarViewController.h"
 #import "GKNavigationBarConfigure.h"
+#import "UINavigationController+GKCategory.h"
 
 @interface GKNavigationBarViewController ()
 
@@ -33,7 +34,9 @@
     [super viewWillAppear:animated];
     
     // 隐藏系统导航栏
-    [self.navigationController setNavigationBarHidden:YES];
+    if (!self.navigationController.gk_openSystemNavHandle) {
+        [self.navigationController setNavigationBarHidden:YES];
+    }
     
     // 将自定义导航栏放置顶层
     if (self.gk_navigationBar && !self.gk_navigationBar.hidden) {
@@ -120,7 +123,7 @@
     CGFloat navBarH = 0;
     if (width > height) { // 横屏
         if (GK_IS_iPad) {
-            CGFloat statusBarH = [UIApplication sharedApplication].statusBarFrame.size.height;
+            CGFloat statusBarH = [GKConfigure gk_statusBarFrame].size.height;
             CGFloat navigaBarH = self.navigationController.navigationBar.frame.size.height;
             navBarH = statusBarH + navigaBarH;
         }else if (GK_IS_iPhoneX) {
