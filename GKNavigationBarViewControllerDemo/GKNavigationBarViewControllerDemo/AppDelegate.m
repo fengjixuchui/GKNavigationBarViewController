@@ -35,6 +35,8 @@
         // 导航栏左右item间距
         configure.gk_navItemLeftSpace = 12.0f;
         configure.gk_navItemRightSpace = 12.0f;
+        configure.shiledGuestureVCs = @[@"TZ"];
+        configure.shiledItemSpaceVCs = @[@"TZ", @"GKDemoWebViewController"];
     }];
     
     IQKeyboardManager *manager = [IQKeyboardManager sharedManager];
@@ -46,6 +48,7 @@
     UINavigationController *nav = [UINavigationController rootVC:[GKMainViewController new] translationScale:NO];
 //    UINavigationController *nav = [UINavigationController rootVC:[GKWXHomeViewController new] translationScale:NO];
     nav.gk_openScrollLeftPush = YES;
+    nav.gk_openSystemNavHandle = YES;
     self.window.rootViewController = nav;
     [self.window makeKeyAndVisible];
     return YES;

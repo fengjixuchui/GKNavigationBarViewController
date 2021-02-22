@@ -12,6 +12,13 @@
 
 @interface UINavigationController (GKCategory)
 
+/// 创建支持手势返回的导航栏
+/// @param rootVC 根控制器
++ (instancetype)rootVC:(UIViewController *)rootVC;
+
+/// 创建支持手势返回的导航栏
+/// @param rootVC 根控制器
+/// @param translationScale 是否需要缩放
 + (instancetype)rootVC:(UIViewController *)rootVC translationScale:(BOOL)translationScale;
 
 - (instancetype)initWithRootVC:(UIViewController *)rootVC translationScale:(BOOL)translationScale;
@@ -22,8 +29,9 @@
 /** 是否开启左滑push操作，默认是NO，此时不可禁用控制器的滑动返回手势 */
 @property (nonatomic, assign) BOOL gk_openScrollLeftPush;
 
-/** 是否禁止导航控制器的手势处理，默认NO，如果设置为YES，则手势操作将失效(包括全屏手势和边缘手势) */
-@property (nonatomic, assign) BOOL gk_disabledGestureHandle;
+/// 是否开启手势处理，默认为NO
+/// 只能通过上面的两个初始化方法开启
+@property (nonatomic, assign, readonly) BOOL gk_openGestureHandle;
 
 /// 开启系统导航与GKNavigationBar过渡处理，需要在显示系统导航栏的控制器中调用显示导航栏方法
 @property (nonatomic, assign) BOOL gk_openSystemNavHandle;

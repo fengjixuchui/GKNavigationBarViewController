@@ -34,8 +34,6 @@
 @property (weak, nonatomic) IBOutlet UILabel *fullScreenInterceptLabel;
 @property (weak, nonatomic) IBOutlet UISwitch *fullScreenInterceptSwitch;
 
-
-
 @property (weak, nonatomic) IBOutlet UILabel *fullScreenDistanceLabel;
 @property (weak, nonatomic) IBOutlet UISlider *fullScreenDistanceSlider;
 @property (weak, nonatomic) IBOutlet UILabel *navBarAlphaLabel;
@@ -43,6 +41,9 @@
 
 @property (nonatomic, strong) UIBarButtonItem *moreItem;
 @property (nonatomic, strong) UIBarButtonItem *shareItem;
+
+// 是否禁止返回
+@property (nonatomic, assign) BOOL disableBack;
 
 @end
 
@@ -77,18 +78,9 @@
     self.fullScreenDistanceLabel.text = [NSString stringWithFormat:@"全屏返回手势距离：%f", self.gk_popMaxAllowedDistanceToLeftEdge];
     self.navBarAlphaSlider.value = self.gk_navBarAlpha;
     self.navBarAlphaLabel.text = [NSString stringWithFormat:@"导航栏透明度：%f", self.gk_navBarAlpha];
-}
-
-- (void)viewDidAppear:(BOOL)animated {
-    [super viewDidAppear:animated];
     
-    [[IQKeyboardManager sharedManager] setEnable:NO];
-}
-
-- (void)viewWillDisappear:(BOOL)animated {
-    [super viewWillDisappear:animated];
-    
-    [[IQKeyboardManager sharedManager] setEnable:YES];
+//    self.gk_systemGestureHandleDisabled = YES;
+    self.gk_popDelegate = self;
 }
 
 - (IBAction)interactivePopAction:(id)sender {
@@ -107,7 +99,11 @@
     if (self.statusBarStyleSwitch.on) {
         self.gk_statusBarStyle = UIStatusBarStyleLightContent;
     }else {
-        self.gk_statusBarStyle = UIStatusBarStyleDefault;
+        if (@available(iOS 13.0, *)) {
+            self.gk_statusBarStyle = UIStatusBarStyleDarkContent;
+        } else {
+            self.gk_statusBarStyle = UIStatusBarStyleDefault;
+        }
     }
     self.statusBarStyleLabel.text = [NSString stringWithFormat:@"状态栏样式：%@", self.statusBarStyleSwitch.on ? @"LightContent" : @"Default"];
 }
@@ -157,11 +153,11 @@
 
 - (IBAction)fullScreenInterceptAction:(id)sender {
     if (self.fullScreenInterceptSwitch.on) {
-        self.gk_popDelegate = self;
+        self.disableBack = YES;
     }else {
-        self.gk_popDelegate = nil;
+        self.disableBack = NO;
     }
-    self.fullScreenInterceptLabel.text = [NSString stringWithFormat:@"全屏手势返回拦截：%@", self.fullScreenInterceptSwitch.on ? @"开" : @"关"];
+    self.fullScreenInterceptLabel.text = [NSString stringWithFormat:@"返回拦截：%@", self.fullScreenInterceptSwitch.on ? @"开" : @"关"];
 }
 
 - (IBAction)fullScreenDistanceAction:(id)sender {
@@ -173,14 +169,23 @@
     self.navBarAlphaLabel.text = [NSString stringWithFormat:@"导航栏透明度：%f", self.gk_navBarAlpha];
 }
 
+- (void)moreClick {
+    GKDemoWebViewController *webVC = [GKDemoWebViewController new];
+    
+    UINavigationController *nav = [UINavigationController rootVC:webVC];
+    nav.modalPresentationStyle = UIModalPresentationFullScreen;
+    [self presentViewController:nav animated:YES completion:nil];
+}
+
 #pragma mark - 懒加载
 - (UIBarButtonItem *)moreItem {
     if (!_moreItem) {
         UIButton *btn = [UIButton new];
         btn.frame = CGRectMake(0, 0, 44, 44);
         [btn setTitle:@"更多" forState:UIControlStateNormal];
-        btn.backgroundColor = [UIColor blackColor];
+//        btn.backgroundColor = [UIColor blackColor];
         [btn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+        [btn addTarget:self action:@selector(moreClick) forControlEvents:UIControlEventTouchUpInside];
         
         _moreItem = [[UIBarButtonItem alloc] initWithCustomView:btn];
     }
@@ -200,21 +205,28 @@
     return _shareItem;
 }
 
-#pragma mark - GKViewControllerPopDelegate
-- (void)viewControllerPopScrollBegan {
-    UIAlertController *alertVC = [UIAlertController alertControllerWithTitle:@"温馨提示" message:@"确定要返回吗？" preferredStyle:UIAlertControllerStyleAlert];
-    [alertVC addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
-    [alertVC addAction:[UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-        self.gk_popDelegate = nil;
-        [self.navigationController popViewControllerAnimated:YES];
-    }]];
-    [self presentViewController:alertVC animated:YES completion:nil];
-}
-
 #pragma mark - GKViewControllerPushDelegate
 - (void)pushToNextViewController {
     GKDemoWebViewController *webVC = [GKDemoWebViewController new];
     [self.navigationController pushViewController:webVC animated:YES];
+}
+
+#pragma mark - GKGesturePopHandlerProtocol
+- (BOOL)navigationShouldPop {
+    if (self.disableBack) {
+        [self showBackAlert];
+    }
+    return !self.disableBack;
+}
+
+- (void)showBackAlert {
+    UIAlertController *alertVC = [UIAlertController alertControllerWithTitle:@"温馨提示" message:@"确定要返回吗？" preferredStyle:UIAlertControllerStyleAlert];
+    [alertVC addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
+    [alertVC addAction:[UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+        self.disableBack = NO;
+        [self.navigationController popViewControllerAnimated:YES];
+    }]];
+    [self presentViewController:alertVC animated:YES completion:nil];
 }
 
 @end
